@@ -1,0 +1,131 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { expect } from "chai";
+import { Contract } from "ethers";
+import { parseEther, formatEther } from "ethers/lib/utils";
+import hre, { ethers } from "hardhat";
+
+describe("XLP contract test", () => {
+  const DEFAULT_MINT_AMOUNT = 10 ** 8;
+  let xlpContract: Contract;
+  let AContract: Contract;
+  let BContract: Contract;
+  let owner: SignerWithAddress, user1: SignerWithAddress;
+
+  const initPool = async (amountA: string, amountB: string) => {
+    const [owner, user1] = await ethers.getSigners();
+    // mint A, B
+    await AContract.connect(owner).mint(parseEther(amountA));
+    await BContract.connect(owner).mint(parseEther(amountB));
+    // approve A, B for XLP
+    await AContract.connect(owner).approve(
+      xlpContract.address,
+      parseEther(amountA)
+    );
+    await BContract.connect(owner).approve(
+      xlpContract.address,
+      parseEther(amountB)
+    );
+    // add liquidity
+    xlpContract
+      .connect(owner)
+      .addLiquidity(parseEther(amountA), parseEther(amountB));
+  };
+
+  beforeEach(async () => {
+    [owner, user1] = await ethers.getSigners();
+    const tokenFactory = await ethers.getContractFactory("Token");
+    AContract = await tokenFactory.deploy("A", "A");
+    await AContract.deployed();
+    BContract = await tokenFactory.deploy("B", "B");
+    await BContract.deployed();
+    const xlp = await ethers.getContractFactory("XLP");
+    xlpContract = await xlp.deploy(AContract.address, BContract.address);
+  });
+
+  it("Init pool with A, B token", async () => {
+    await initPool("1000", "10");
+    // expect XLP token is minted
+    const xlpTotalSupply = await xlpContract.totalSupply();
+    expect(xlpTotalSupply).to.eq(parseEther(DEFAULT_MINT_AMOUNT + ""));
+  });
+
+  it("Increase liquidity pool with A, B token", async () => {
+    await initPool("1000", "10");
+    // increase liquidity
+    const increaseAmountA = "500";
+    const increaseAmountB = "5";
+    // mint A, B
+    await AContract.connect(owner).mint(parseEther(increaseAmountA));
+    await BContract.connect(owner).mint(parseEther(increaseAmountB));
+    // approve A, B for XLP
+    await AContract.connect(owner).approve(
+      xlpContract.address,
+      parseEther(increaseAmountA)
+    );
+    await BContract.connect(owner).approve(
+      xlpContract.address,
+      parseEther(increaseAmountB)
+    );
+    // add liquidity
+    await xlpContract
+      .connect(owner)
+      .addLiquidity(parseEther(increaseAmountA), parseEther(increaseAmountB));
+    const xlpTotalSupply = await xlpContract.totalSupply();
+    // expected XLP totalSupply is increased
+    expect(xlpTotalSupply).eq(
+      parseEther(DEFAULT_MINT_AMOUNT + (DEFAULT_MINT_AMOUNT * 500) / 1000 + "")
+    );
+  });
+
+  it("Remove liquidity pool with A, B token", async () => {
+    await initPool("1000", "10");
+    const xlpTotalSupplyBefore = await xlpContract.totalSupply();
+    // remove liquidity
+    const removeXLP = "1000000";
+    const minAmountA = "1"; // min amount of A token in pool
+    const minAmountB = "0.1"; //  min amount of B token in pool
+    await xlpContract
+      .connect(owner)
+      .removeLiquidity(
+        parseEther(minAmountA),
+        parseEther(minAmountB),
+        parseEther(removeXLP)
+      );
+    const xlpTotalSupplyAfter = await xlpContract.totalSupply();
+    // expected XLP totalSupply is increased
+    expect(xlpTotalSupplyBefore.sub(xlpTotalSupplyAfter)).eq(
+      parseEther(removeXLP)
+    );
+  });
+
+  it("Swap A, B token", async () => {
+    await initPool("10000", "100"); // 100A = 1B => 1A = 0.01B
+    const amountIn = "1";
+    const maxAmountOut = "100";
+    // approve A, B for XLP
+    await AContract.connect(owner).approve(
+      xlpContract.address,
+      parseEther("1000")
+    );
+    await BContract.connect(owner).approve(
+      xlpContract.address,
+      parseEther("1000")
+    );
+    // mint more A, B
+    await AContract.connect(owner).mint(parseEther(amountIn));
+    const balanceOfABefore = await AContract.balanceOf(owner.address);
+    const balanceOfBBefore = await BContract.balanceOf(owner.address);
+
+    await xlpContract
+      .connect(owner)
+      .swap(parseEther(amountIn), parseEther(maxAmountOut));
+
+    const balanceOfAAfter = await AContract.balanceOf(owner.address);
+    const balanceOfBAfter = await BContract.balanceOf(owner.address);
+    const expectAmountOut = parseEther("10000")
+      .mul(parseEther("100"))
+      .div(parseEther("10000").add(parseEther(amountIn)));
+    expect(balanceOfABefore.sub(balanceOfAAfter)).eq(parseEther(amountIn));
+    expect(balanceOfBAfter.sub(balanceOfBBefore)).eq(expectAmountOut);
+  });
+});

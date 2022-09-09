@@ -8,18 +8,20 @@ contract XLP is ERC20 {
     ERC20 private tokenA;
     ERC20 private tokenB;
     uint256 private k;
-    uint256 private _totalSupply = 0;
+    uint256 private _initialMint;
 
-    uint256 private constant initial_mint = 10**8;
+    uint256 private constant DEFAULT_MINT_AMOUNT = 10**8;
     uint256 private constant PRECISION = 1e12;
 
     constructor(ERC20 _A, ERC20 _B) ERC20("XLP", "XLP") {
         tokenA = _A;
         tokenB = _B;
+        _initialMint = DEFAULT_MINT_AMOUNT * 10**decimals();
     }
 
     function addLiquidity(uint256 amountA, uint256 amountB) public {
-        uint256 xlpMintAmount = initial_mint;
+        uint256 _totalSupply = totalSupply();
+        uint256 xlpMintAmount = _initialMint;
         uint256 balanceOfA = tokenA.balanceOf(address(this));
         uint256 balanceOfB = tokenB.balanceOf(address(this));
         // keep pool with same ratio A and B
@@ -27,6 +29,7 @@ contract XLP is ERC20 {
             amountA * balanceOfB == balanceOfA * amountB,
             "addLiquidity: insufficient amount"
         );
+
         // calculate amount allow to add. Asume A is a mark.
         // A pool is existed if both balance A and B are not zero.
         if (balanceOfA == 0) {
@@ -41,8 +44,7 @@ contract XLP is ERC20 {
             tokenB.transferFrom(msg.sender, address(this), allowAmountB);
         }
         // mint XLP
-        mintFrom(msg.sender, xlpMintAmount);
-
+        _mint(msg.sender, xlpMintAmount);
         emit AddLiquidity(msg.sender, amountA, amountB);
     }
 
@@ -51,6 +53,7 @@ contract XLP is ERC20 {
         uint256 minAmountB,
         uint256 amountXLP
     ) public {
+        uint256 _totalSupply = totalSupply();
         uint256 balanceOfXLP = balanceOf(msg.sender);
         require(
             amountXLP <= balanceOfXLP,
@@ -58,35 +61,32 @@ contract XLP is ERC20 {
         );
         uint256 balanceOfA = tokenA.balanceOf(address(this));
         uint256 balanceOfB = tokenB.balanceOf(address(this));
-        uint256 allowAmountA = (balanceOfA * amountXLP) / _totalSupply;
-        uint256 allowAmountB = (balanceOfB * amountXLP) / _totalSupply;
+        uint256 allowRemoveAmountA = (balanceOfA * amountXLP) / _totalSupply;
+        uint256 allowRemoveAmountB = (balanceOfB * amountXLP) / _totalSupply;
         require(
-            allowAmountA >= minAmountA && allowAmountB >= minAmountB,
+            allowRemoveAmountA >= minAmountA &&
+                allowRemoveAmountB >= minAmountB,
             "removeLiquidity: insufficient output amount"
         );
-        k = (balanceOfA - allowAmountA) * (balanceOfB - allowAmountB);
+        k =
+            (balanceOfA - allowRemoveAmountA) *
+            (balanceOfB - allowRemoveAmountB);
         // transfer A, B token to sender
-        tokenA.transferFrom(address(this), msg.sender, allowAmountA);
-        tokenB.transferFrom(address(this), msg.sender, allowAmountB);
+        tokenA.transfer(msg.sender, allowRemoveAmountA);
+        tokenB.transfer(msg.sender, allowRemoveAmountB);
         // burn XLP
-        burnFrom(msg.sender, amountXLP);
-
+        _burn(msg.sender, amountXLP);
         emit RemoveLiquidity(msg.sender, amountXLP);
     }
 
     // asume tokenA is dep in pool and will get tokenB.
-    function swap(uint256 amountIn, uint256 minAmountOut) public {
+    function swap(uint256 amountIn, uint256 maxAmountOut) public {
         uint256 balanceOfA = tokenA.balanceOf(address(this));
-        uint256 balanceOfB = tokenB.balanceOf(address(this));
         uint256 amountOut = k / (balanceOfA + amountIn);
-        require(
-            balanceOfB - amountOut >= minAmountOut,
-            "swap: insufficient output amount"
-        );
+        require(amountOut <= maxAmountOut, "swap: insufficient output amount");
         // transfer token
         tokenA.transferFrom(msg.sender, address(this), amountIn);
-        tokenB.transferFrom(address(this), msg.sender, amountOut);
-
+        tokenB.transfer(msg.sender, amountOut);
         emit Swap(
             msg.sender,
             address(tokenA),
@@ -94,15 +94,6 @@ contract XLP is ERC20 {
             amountIn,
             amountOut
         );
-    }
-
-    function mintFrom(address account, uint256 _amount) public {
-        _mint(account, _amount);
-    }
-
-    function burnFrom(address account, uint256 _amount) public {
-        _spendAllowance(account, msg.sender, _amount);
-        _burn(account, _amount);
     }
 
     event AddLiquidity(address indexed from, uint256 amountA, uint256 amountB);
