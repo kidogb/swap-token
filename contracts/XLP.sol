@@ -102,7 +102,13 @@ contract XLP is ERC20 {
         // transfer token
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
         IERC20(tokenOut).transfer(msg.sender, balanceOfOut - amountOut);
-        emit Swap(msg.sender, tokenIn, tokenOut, amountIn, balanceOfOut - amountOut);
+        emit Swap(
+            msg.sender,
+            tokenIn,
+            tokenOut,
+            amountIn,
+            balanceOfOut - amountOut
+        );
     }
 
     // calculate amount out when swap
@@ -116,8 +122,9 @@ contract XLP is ERC20 {
             (tokenIn == address(tokenB) && tokenOut == address(tokenA));
         require(addressCondition, "view swap: not A or B token");
         uint256 balanceOfIn = IERC20(tokenIn).balanceOf(address(this));
+        uint256 balanceOfOut = IERC20(tokenOut).balanceOf(address(this));
         uint256 amountOut = k / (balanceOfIn + amountIn);
-        return amountOut;
+        return balanceOfOut - amountOut;
     }
 
     event AddLiquidity(address indexed from, uint256 amountA, uint256 amountB);
