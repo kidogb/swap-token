@@ -15,6 +15,7 @@ async function main() {
   //Deploy XLP
   const xlpFactory = await ethers.getContractFactory("XLP");
   const tokenXlp = await xlpFactory.deploy(tokenA.address, tokenB.address);
+  // const tokenXlp = await xlpFactory.deploy('0x3388965802781fF73De53180A54Ac520ab996B55', '0x81701263bA017a9D5F180b2e953d924F17640A54');
   await tokenXlp.deployed();
   console.log(`Token XLP deployed to ${tokenXlp.address}`);
 }

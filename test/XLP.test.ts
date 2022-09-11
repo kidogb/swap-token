@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { Contract } from "ethers";
+import { Contract, BigNumber } from "ethers";
 import { parseEther, formatEther } from "ethers/lib/utils";
 import hre, { ethers } from "hardhat";
 
@@ -101,7 +101,8 @@ describe("XLP contract test", () => {
   it("Swap A, B token", async () => {
     await initPool("10000", "100"); // 100A = 1B => 1A = 0.01B
     const amountIn = "1";
-    const maxAmountOut = "100";
+    // (1- slippage) * desiredAmoutOut <= minAmountOut <= desiredAmount
+    const minAmountOut = BigNumber.from("1");
     // approve A, B for XLP
     await AContract.connect(owner).approve(
       xlpContract.address,
@@ -115,16 +116,24 @@ describe("XLP contract test", () => {
     await AContract.connect(owner).mint(parseEther(amountIn));
     const balanceOfABefore = await AContract.balanceOf(owner.address);
     const balanceOfBBefore = await BContract.balanceOf(owner.address);
+    const balanceOfBInPool = await BContract.balanceOf(xlpContract.address);
 
     await xlpContract
       .connect(owner)
-      .swap(parseEther(amountIn), parseEther(maxAmountOut));
+      .swap(
+        AContract.address,
+        BContract.address,
+        parseEther(amountIn),
+        parseEther("0.0001")
+      );
 
     const balanceOfAAfter = await AContract.balanceOf(owner.address);
     const balanceOfBAfter = await BContract.balanceOf(owner.address);
-    const expectAmountOut = parseEther("10000")
-      .mul(parseEther("100"))
-      .div(parseEther("10000").add(parseEther(amountIn)));
+    const expectAmountOut = balanceOfBInPool.sub(
+      parseEther("10000")
+        .mul(parseEther("100"))
+        .div(parseEther("10000").add(parseEther(amountIn)))
+    );
     expect(balanceOfABefore.sub(balanceOfAAfter)).eq(parseEther(amountIn));
     expect(balanceOfBAfter.sub(balanceOfBBefore)).eq(expectAmountOut);
   });

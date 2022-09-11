@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
-import "hardhat/console.sol";
+import "./IERC20.sol";
 
 contract XLP is ERC20 {
     ERC20 private tokenA;
@@ -80,20 +80,44 @@ contract XLP is ERC20 {
     }
 
     // asume tokenA is dep in pool and will get tokenB.
-    function swap(uint256 amountIn, uint256 maxAmountOut) public {
-        uint256 balanceOfA = tokenA.balanceOf(address(this));
-        uint256 amountOut = k / (balanceOfA + amountIn);
-        require(amountOut <= maxAmountOut, "swap: insufficient output amount");
-        // transfer token
-        tokenA.transferFrom(msg.sender, address(this), amountIn);
-        tokenB.transfer(msg.sender, amountOut);
-        emit Swap(
-            msg.sender,
-            address(tokenA),
-            address(tokenB),
-            amountIn,
-            amountOut
+    // amountIn: amount token user want to swap
+    // minAmountOut: minimum amount swapped token user received
+    function swap(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) public {
+        bool addressCondition = (tokenIn == address(tokenA) &&
+            tokenOut == address(tokenB)) ||
+            (tokenIn == address(tokenB) && tokenOut == address(tokenA));
+        require(addressCondition, "swap: not A or B token");
+        uint256 balanceOfIn = IERC20(tokenIn).balanceOf(address(this));
+        uint256 balanceOfOut = IERC20(tokenOut).balanceOf(address(this));
+        uint256 amountOut = k / (balanceOfIn + amountIn); // new amount of tokenOut in pool
+        require(
+            balanceOfOut - amountOut >= minAmountOut,
+            "swap: insufficient output amount"
         );
+        // transfer token
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenOut).transfer(msg.sender, balanceOfOut - amountOut);
+        emit Swap(msg.sender, tokenIn, tokenOut, amountIn, balanceOfOut - amountOut);
+    }
+
+    // calculate amount out when swap
+    function viewAmountOut(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) public view returns (uint256) {
+        bool addressCondition = (tokenIn == address(tokenA) &&
+            tokenOut == address(tokenB)) ||
+            (tokenIn == address(tokenB) && tokenOut == address(tokenA));
+        require(addressCondition, "view swap: not A or B token");
+        uint256 balanceOfIn = IERC20(tokenIn).balanceOf(address(this));
+        uint256 amountOut = k / (balanceOfIn + amountIn);
+        return amountOut;
     }
 
     event AddLiquidity(address indexed from, uint256 amountA, uint256 amountB);
