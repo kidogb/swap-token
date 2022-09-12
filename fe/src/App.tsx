@@ -14,6 +14,7 @@ import Header from './components/Header';
 import ConnectButton from './components/ConnectButton';
 import AccountModal from './components/Modal/AccountModal';
 import Swap from './pages/Swap';
+import Pool from './pages/Pool';
 import '@fontsource/inter';
 import './global.css';
 import logo from './assets/uniswap_logo.svg';
@@ -43,7 +44,7 @@ function App() {
                 <Swap />
               </TabPanel>
               <TabPanel>
-                <Swap />
+                <Pool />
               </TabPanel>
             </TabPanels>
           </Tabs>
