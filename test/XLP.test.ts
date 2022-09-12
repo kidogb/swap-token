@@ -28,7 +28,12 @@ describe("XLP contract test", () => {
     // add liquidity
     xlpContract
       .connect(owner)
-      .addLiquidity(parseEther(amountA), parseEther(amountB));
+      .addLiquidity(
+        parseEther(amountA),
+        parseEther(amountB),
+        BigNumber.from("0"),
+        BigNumber.from("0")
+      );
   };
 
   beforeEach(async () => {
@@ -69,7 +74,12 @@ describe("XLP contract test", () => {
     // add liquidity
     await xlpContract
       .connect(owner)
-      .addLiquidity(parseEther(increaseAmountA), parseEther(increaseAmountB));
+      .addLiquidity(
+        parseEther(increaseAmountA),
+        parseEther(increaseAmountB),
+        BigNumber.from("0"),
+        BigNumber.from("0")
+      );
     const xlpTotalSupply = await xlpContract.totalSupply();
     // expected XLP totalSupply is increased
     expect(xlpTotalSupply).eq(
