@@ -42,7 +42,7 @@ export default function SwapButton({ onSwap, loadingSwap }: Props) {
   }
 
   return account ? (
-    true ? (
+    true ? ( // set as true for future feature, can select token
       <Box mt="0.5rem">
         <Button
           size="lg"

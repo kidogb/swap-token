@@ -6,16 +6,16 @@ import {
   Image,
   Center,
   Badge,
-  Spacer,
+  useDisclosure,
 } from '@chakra-ui/react';
 
 import { SettingsIcon } from '@chakra-ui/icons';
-import React, { useState } from 'react';
 import theme from '../theme';
-import tokens, { Token } from './../abi/tokens';
+import tokens from './../abi/tokens';
 import { useEthers, useTokenBalance } from '@usedapp/core';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits } from 'ethers/lib/utils';
 import { DECIMALS } from '../constant';
+import AddLiquidityModal from '../components/Modal/AddLiquidityModal';
 
 declare let window: any;
 export default function Pool() {
@@ -23,6 +23,7 @@ export default function Pool() {
 
   const balanceAToken = useTokenBalance(tokens[0].address, tokens[2].address);
   const balanceBToken = useTokenBalance(tokens[1].address, tokens[2].address);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <Box
@@ -83,9 +84,11 @@ export default function Pool() {
                 _active={{
                   borderColor: theme.colors.gray_light,
                 }}
+                onClick={onOpen}
               >
                 Add Liquidity
               </Button>
+              <AddLiquidityModal isOpen={isOpen} onClose={onClose} />
               <Button
                 bg={theme.colors.pink_dark}
                 color={theme.colors.pink_light}
