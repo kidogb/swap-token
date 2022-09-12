@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-import { Config, DAppProvider, Mainnet, Goerli, Kovan } from '@usedapp/core';
+import { Config, DAppProvider, Goerli } from '@usedapp/core';
 import { ApolloProvider } from 'react-apollo';
 import { ApolloClient } from 'apollo-client';
 import { InMemoryCache } from 'apollo-cache-inmemory';
@@ -19,7 +19,6 @@ const config: Config = {
   readOnlyChainId: Goerli.chainId,
   readOnlyUrls: {
     [Goerli.chainId]: getDefaultProvider('goerli'),
-    [Kovan.chainId]: getDefaultProvider('kovan'),
   },
 };
 ReactDOM.render(

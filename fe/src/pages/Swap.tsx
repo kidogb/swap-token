@@ -11,27 +11,27 @@ import {
 } from '@chakra-ui/react';
 
 import { SettingsIcon, ArrowDownIcon } from '@chakra-ui/icons';
-import SwapButton from './../components/SwapButton';
+import SwapButton, { AlertButton } from './../components/SwapButton';
 import TokenSelect from './../components/TokenSelect';
 import React, { useContext, useState } from 'react';
 import theme from '../theme';
 import tokens, { Token } from './../abi/tokens';
-import { useTokenBalance } from '@usedapp/core';
-import AppContext from '../AppContext';
-import { formatEther, formatUnits, parseUnits } from 'ethers/lib/utils';
+import { useEthers, useTokenBalance } from '@usedapp/core';
+import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { DECIMALS } from '../constant';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import xlpABI from '../abi/XLP.json';
 import { useSwapAmountOut } from '../hooks/useSwapAmountOut';
+import SwapDetail from '../components/SwapDetail';
 
+declare let window: any;
 export default function Swap() {
-  // const [value, setValue] = useState<number>(0);
-
-  const { account } = useContext(AppContext);
-
+  // const { account } = useContext(AppContext);
+  const { account } = useEthers();
+  const [loading, setLoading] = useState<boolean>(false);
   const [inToken, setInToken] = useState<Token | undefined>(tokens[0]);
   const [outToken, setOutToken] = useState<Token | undefined>(tokens[1]);
-  const [swapAmountIn, setSwapAmountIn] = useState<string | undefined>();
+  const [swapAmountIn, setSwapAmountIn] = useState<string | undefined>('');
   const balanceInputToken = useTokenBalance(inToken?.address, account);
   const balanceOutputToken = useTokenBalance(outToken?.address, account);
   const swapAmountOut = useSwapAmountOut(
@@ -51,9 +51,37 @@ export default function Swap() {
     setSwapAmountIn(e.target.value);
   };
 
-  const onSwapToken = () => {
+  const onClickSwapArrow = () => {
     setInToken(outToken);
     setOutToken(inToken);
+  };
+
+  const onClickMaxButton = () => {
+    balanceInputToken &&
+      setSwapAmountIn(formatUnits(balanceInputToken, DECIMALS));
+  };
+
+  const onSwapToken = async () => {
+    if (!inToken || !outToken) return;
+    try {
+      setLoading(true);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      let xlpContract = new ethers.Contract(tokens[2].address, xlpABI, signer);
+      if (swapAmountIn) {
+        const tx = await xlpContract.swap(
+          inToken.address,
+          outToken.address,
+          parseUnits(swapAmountIn, DECIMALS),
+          BigNumber.from('0')
+        );
+        await tx.wait();
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -115,6 +143,7 @@ export default function Swap() {
                   focusBorderColor="none"
                   type="number"
                   color="black"
+                  value={swapAmountIn}
                   onChange={onChangeAmountIn}
                 />
               </Box>
@@ -131,7 +160,12 @@ export default function Swap() {
               </Box>
               <Spacer />
               <Box px="1rem">
-                <Button colorScheme="pink" variant="link" size="sm">
+                <Button
+                  onClick={onClickMaxButton}
+                  colorScheme="pink"
+                  variant="link"
+                  size="sm"
+                >
                   max
                 </Button>
               </Box>
@@ -157,7 +191,7 @@ export default function Swap() {
             borderRadius="0.75rem"
             _hover={{ bg: theme.colors.gray_dark }}
             _active={{ bg: theme.colors.gray_light }}
-            onClick={onSwapToken}
+            onClick={onClickSwapArrow}
           />
         </Flex>
 
@@ -210,12 +244,6 @@ export default function Swap() {
                     : '--'}
                 </Text>
               </Box>
-              <Spacer />
-              <Box px="1rem">
-                <Button colorScheme="pink" variant="link" size="sm">
-                  max
-                </Button>
-              </Box>
             </Flex>
           </VStack>
         </Flex>
@@ -224,7 +252,24 @@ export default function Swap() {
             1 {outToken?.name} = {rate ? rate : '--'} {inToken?.name}
           </Text>
         </Box>
-        <SwapButton />
+        <SwapDetail
+          slippage="0.5"
+          expectedAmountOut={
+            swapAmountOut ? formatUnits(swapAmountOut, DECIMALS) : ''
+          }
+          currentAMountOut={
+            swapAmountOut ? formatUnits(swapAmountOut, DECIMALS) : ''
+          }
+        />
+        {swapAmountIn &&
+        balanceInputToken &&
+        parseUnits(swapAmountIn, DECIMALS).gt(balanceInputToken) ? (
+          <AlertButton
+            text={`Insufficient ${inToken?.name} balance`}
+          ></AlertButton>
+        ) : (
+          <SwapButton onSwap={onSwapToken} loadingSwap={loading} />
+        )}
       </Box>
     </Box>
   );

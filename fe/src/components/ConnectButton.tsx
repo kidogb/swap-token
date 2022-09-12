@@ -18,7 +18,7 @@ export default function ConnectButton({ handleOpenModal }: Props) {
 
   useEffect(() => {
     account && context.setAccount(account); // set account to global context
-  }, [account]);
+  }, [account, context]);
 
   async function handleConnectWallet() {
     try {
