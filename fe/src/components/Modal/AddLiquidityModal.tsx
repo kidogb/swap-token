@@ -69,7 +69,6 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
           .mul(parseUnits(value, DECIMALS))
           .div(poolBalanceToken0);
         setAmountToken1(formatUnits(estimateAmountToken1, DECIMALS));
-        console.log('E', formatUnits(estimateAmountToken1 || '0', DECIMALS));
       }
     }
   };
@@ -83,7 +82,6 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
           .mul(parseUnits(value, DECIMALS))
           .div(poolBalanceToken1);
         setAmountToken0(formatUnits(estimateAmountToken0, DECIMALS));
-        console.log('E', formatUnits(estimateAmountToken0 || '0', DECIMALS));
       }
     }
   };
