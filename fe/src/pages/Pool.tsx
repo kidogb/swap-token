@@ -7,23 +7,42 @@ import {
   Center,
   Badge,
   useDisclosure,
+  Spacer,
 } from '@chakra-ui/react';
 
 import { SettingsIcon } from '@chakra-ui/icons';
 import theme from '../theme';
 import tokens from './../abi/tokens';
-import { useEthers, useTokenBalance } from '@usedapp/core';
+import { useTokenBalance } from '@usedapp/core';
 import { formatUnits } from 'ethers/lib/utils';
 import { DECIMALS } from '../constant';
 import AddLiquidityModal from '../components/Modal/AddLiquidityModal';
+import RemoveLiquidityModal from '../components/Modal/RemoveLiquidityModal';
 
-declare let window: any;
 export default function Pool() {
-  const { account } = useEthers();
-
   const balanceAToken = useTokenBalance(tokens[0].address, tokens[2].address);
   const balanceBToken = useTokenBalance(tokens[1].address, tokens[2].address);
+  const balanceATokenFloat =
+    balanceAToken && parseFloat(formatUnits(balanceAToken, DECIMALS));
+  const balanceBTokenFloat =
+    balanceBToken && parseFloat(formatUnits(balanceBToken, DECIMALS));
+  const ratioA =
+    balanceATokenFloat &&
+    balanceBTokenFloat &&
+    (100 * balanceATokenFloat) / (balanceATokenFloat + balanceBTokenFloat);
+  const ratioB =
+    balanceATokenFloat &&
+    balanceBTokenFloat &&
+    (100 * balanceBTokenFloat) / (balanceATokenFloat + balanceBTokenFloat);
+
+  // for Add Liquidity modal
   const { isOpen, onOpen, onClose } = useDisclosure();
+  // for Remove Liquidity modal
+  const {
+    isOpen: isOpenRemoveModal,
+    onOpen: onOpenRemoveModal,
+    onClose: onCloseRemoveModal,
+  } = useDisclosure();
 
   return (
     <Box
@@ -103,9 +122,14 @@ export default function Pool() {
                 _active={{
                   borderColor: theme.colors.pink_dark,
                 }}
+                onClick={onOpenRemoveModal}
               >
                 Remove Liquidity
               </Button>
+              <RemoveLiquidityModal
+                isOpen={isOpenRemoveModal}
+                onClose={onCloseRemoveModal}
+              />
             </Center>
           </Box>
           <Box
@@ -130,8 +154,8 @@ export default function Pool() {
                     ) / 1e16
                   : '--'}
               </Text>
-
-              <Badge variant="outline">50%</Badge>
+              <Spacer />
+              <Badge variant="outline">{ratioA && ratioA.toFixed(2)} %</Badge>
             </Flex>
             <Flex p="1rem" direction={['column', 'row']}>
               <Image
@@ -148,7 +172,8 @@ export default function Pool() {
                     ) / 1e16
                   : '--'}
               </Text>
-              <Badge variant="outline">50%</Badge>
+              <Spacer />
+              <Badge variant="outline">{ratioB && ratioB.toFixed(2)} %</Badge>
             </Flex>
           </Box>
         </Flex>

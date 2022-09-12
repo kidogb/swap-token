@@ -294,7 +294,7 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
                           }
                           colorScheme="pink"
                           variant="link"
-                          size="sm"
+                          size="xs"
                         >
                           Approve
                         </Button>
