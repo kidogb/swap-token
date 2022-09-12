@@ -27,6 +27,12 @@
         "internalType": "uint256",
         "name": "amountB",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liquidity",
+        "type": "uint256"
       }
     ],
     "name": "AddLiquidity",
@@ -69,7 +75,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amountXLP",
+        "name": "liquidity",
         "type": "uint256"
       }
     ],
@@ -140,11 +146,24 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountADesired",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountBDesired",
+        "type": "uint256"
+      },
+      { "internalType": "uint256", "name": "minAmountA", "type": "uint256" },
+      { "internalType": "uint256", "name": "minAmountB", "type": "uint256" }
+    ],
+    "name": "addLiquidity",
+    "outputs": [
       { "internalType": "uint256", "name": "amountA", "type": "uint256" },
       { "internalType": "uint256", "name": "amountB", "type": "uint256" }
     ],
-    "name": "addLiquidity",
-    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
