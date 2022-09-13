@@ -31,7 +31,7 @@ import tokens, { Token } from '../../abi/tokens';
 import xlpABI from './../../abi/XLP.json';
 import tokenABI from './../../abi/Token.json';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
-import { DECIMALS } from '../../constant';
+import { DECIMALS, SLIPPAGE } from '../../constant';
 import { BigNumber, ethers } from 'ethers';
 import { getErrorMessage, notify } from '../../utils/notify';
 
@@ -160,8 +160,12 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
         const tx = await xlpContract.addLiquidity(
           parseUnits(amountToken0, DECIMALS),
           parseUnits(amountToken1, DECIMALS),
-          BigNumber.from('0'),
-          BigNumber.from('0')
+          parseUnits(amountToken0, DECIMALS)
+            .mul((1 - SLIPPAGE) * 1000)
+            .div(1000),
+          parseUnits(amountToken1, DECIMALS)
+            .mul((1 - SLIPPAGE) * 1000)
+            .div(1000)
         );
         // notify transaction submited
         notify(toast, 'Transaction is submited', 'success');
@@ -175,6 +179,7 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
       notify(toast, description, 'error');
     } finally {
       setLoading(false);
+      onCloseModal();
     }
   };
 

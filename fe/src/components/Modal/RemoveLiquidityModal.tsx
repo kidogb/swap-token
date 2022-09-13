@@ -28,7 +28,7 @@ import xlpABI from './../../abi/XLP.json';
 import { BigNumber, ethers } from 'ethers';
 import { useTotalSupply } from '../../hooks/useTotalSupply';
 import { formatUnits } from 'ethers/lib/utils';
-import { DECIMALS } from '../../constant';
+import { DECIMALS, SLIPPAGE } from '../../constant';
 import { getErrorMessage, notify } from '../../utils/notify';
 
 type Props = {
@@ -97,8 +97,8 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
     return balanceInPool.mul(liquidityRemoved).div(liquidityPool);
   };
   const onClickPercent = (percent: number) => {
-    if (percent === 0) return;
     setPercentValue(percent);
+    if (poolBalanceToken0?.isZero() || poolBalanceToken1?.isZero()) return;
     const removedAmount =
       liquidityPoolTotalSupply &&
       liquidityPoolTotalSupply.mul(percent).div(100);
@@ -127,6 +127,7 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
 
   const onChangeSlider = (value: number) => {
     setPercentValue(value);
+    if (poolBalanceToken0?.isZero() || poolBalanceToken1?.isZero()) return;
     const removedAmount =
       liquidityPoolTotalSupply && liquidityPoolTotalSupply.mul(value).div(100);
     poolBalanceToken0 &&
@@ -153,6 +154,7 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
   };
 
   const onRemoveLiquidity = async () => {
+    if (poolBalanceToken0?.isZero() || poolBalanceToken1?.isZero()) return;
     try {
       setLoading(true);
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -163,8 +165,8 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
           .mul(percentValue)
           .div(100);
         const tx = await xlpContract.removeLiquidity(
-          BigNumber.from('0'),
-          BigNumber.from('0'),
+          estimateRemovedAmount0?.mul((1 - SLIPPAGE) * 1000).div(1000),
+          estimateRemovedAmount0?.mul((1 - SLIPPAGE) * 1000).div(1000),
           removeLiquidity
         );
         // notify transaction submited
@@ -179,6 +181,7 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
       notify(toast, description, 'error');
     } finally {
       setLoading(false);
+      onClose();
     }
   };
 

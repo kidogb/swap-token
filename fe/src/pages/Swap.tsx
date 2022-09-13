@@ -20,7 +20,7 @@ import theme from '../theme';
 import tokens, { Token } from './../abi/tokens';
 import { useEthers, useTokenBalance } from '@usedapp/core';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
-import { DECIMALS } from '../constant';
+import { DECIMALS, SLIPPAGE } from '../constant';
 import { BigNumber, ethers } from 'ethers';
 import xlpABI from '../abi/XLP.json';
 import { useSwapAmountOut } from '../hooks/useSwapAmountOut';
@@ -76,7 +76,7 @@ export default function Swap() {
           inToken.address,
           outToken.address,
           parseUnits(swapAmountIn, DECIMALS),
-          BigNumber.from('0')
+          swapAmountOut?.mul((1 - SLIPPAGE) * 1000).div(1000) // slippage = 0.5 => 0.5 * 1000/1000 = 500/1000
         );
         // notify transaction submit
         notify(toast, 'Transaction is submited', 'success');
@@ -262,7 +262,7 @@ export default function Swap() {
           </Text>
         </Box>
         <SwapDetail
-          slippage="0.5"
+          slippage={SLIPPAGE + ''}
           expectedAmountOut={
             swapAmountOut ? formatUnits(swapAmountOut, DECIMALS) : ''
           }
