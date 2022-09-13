@@ -21,7 +21,12 @@ import '@fontsource/inter';
 import './global.css';
 import logo from './assets/uniswap_logo.svg';
 import { AppProvider } from './AppContext';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import UniMenu from './components/UniMenu';
 
 function App() {
@@ -39,6 +44,7 @@ function App() {
         <Flex>
           <Router>
             <Routes>
+              <Route path="/" element={<Navigate to="/swap" replace />}></Route>
               <Route path="/swap" element={<Swap />}></Route>
               <Route path="/pool" element={<Pool />}></Route>
             </Routes>
