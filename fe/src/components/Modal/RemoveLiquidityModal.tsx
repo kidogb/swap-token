@@ -70,9 +70,15 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
   const token0 = tokens[0];
   const token1 = tokens[1];
   const [percentValue, setPercentValue] = useState<number>(0);
+  const [estimateRemovedAmount0, setEstimateRemovedAmount0] = useState<
+    BigNumber | undefined
+  >();
+  const [estimateRemovedAmount1, setEstimateRemovedAmount1] = useState<
+    BigNumber | undefined
+  >();
   const [loading, setLoading] = useState(false);
 
-  const liquidityPoolAmount = useTotalSupply(
+  const liquidityPoolTotalSupply = useTotalSupply(
     tokens[2].address,
     new ethers.utils.Interface(xlpABI)
   );
@@ -80,12 +86,67 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
   const poolBalanceToken0 = useTokenBalance(token0?.address, tokens[2].address);
   const poolBalanceToken1 = useTokenBalance(token1?.address, tokens[2].address);
 
+  const estimatePooledOutAmount = (
+    balanceInPool: BigNumber,
+    liquidityRemoved: BigNumber,
+    liquidityPool: BigNumber
+  ) => {
+    return balanceInPool.mul(liquidityRemoved).div(liquidityPool);
+  };
   const onClickPercent = (percent: number) => {
-    setPercentValue(percent * 100);
+    if (percent === 0) return;
+    setPercentValue(percent);
+    const removedAmount =
+      liquidityPoolTotalSupply &&
+      liquidityPoolTotalSupply.mul(percent).div(100);
+    poolBalanceToken0 &&
+      removedAmount &&
+      liquidityPoolTotalSupply &&
+      setEstimateRemovedAmount0(
+        estimatePooledOutAmount(
+          poolBalanceToken0,
+          removedAmount,
+          liquidityPoolTotalSupply
+        )
+      );
+
+    poolBalanceToken1 &&
+      removedAmount &&
+      liquidityPoolTotalSupply &&
+      setEstimateRemovedAmount1(
+        estimatePooledOutAmount(
+          poolBalanceToken1,
+          removedAmount,
+          liquidityPoolTotalSupply
+        )
+      );
   };
 
   const onChangeSlider = (value: number) => {
     setPercentValue(value);
+    const removedAmount =
+      liquidityPoolTotalSupply && liquidityPoolTotalSupply.mul(value).div(100);
+    poolBalanceToken0 &&
+      removedAmount &&
+      liquidityPoolTotalSupply &&
+      setEstimateRemovedAmount0(
+        estimatePooledOutAmount(
+          poolBalanceToken0,
+          removedAmount,
+          liquidityPoolTotalSupply
+        )
+      );
+
+    poolBalanceToken1 &&
+      removedAmount &&
+      liquidityPoolTotalSupply &&
+      setEstimateRemovedAmount1(
+        estimatePooledOutAmount(
+          poolBalanceToken1,
+          removedAmount,
+          liquidityPoolTotalSupply
+        )
+      );
   };
 
   const onRemoveLiquidity = async () => {
@@ -94,8 +155,10 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       let xlpContract = new ethers.Contract(tokens[2].address, xlpABI, signer);
-      if (liquidityPoolAmount) {
-        const removeLiquidity = liquidityPoolAmount.mul(percentValue).div(100);
+      if (liquidityPoolTotalSupply) {
+        const removeLiquidity = liquidityPoolTotalSupply
+          .mul(percentValue)
+          .div(100);
         const tx = await xlpContract.removeLiquidity(
           BigNumber.from('0'),
           BigNumber.from('0'),
@@ -152,16 +215,13 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
                 <Text w="50rem" as="b" fontSize="2xl">
                   {percentValue} %
                 </Text>
+                <PercentButton text="25%" onClick={() => onClickPercent(25)} />
+                <PercentButton text="50%" onClick={() => onClickPercent(50)} />
+                <PercentButton text="75%" onClick={() => onClickPercent(75)} />
                 <PercentButton
-                  text="25%"
-                  onClick={() => onClickPercent(0.25)}
+                  text="100%"
+                  onClick={() => onClickPercent(100)}
                 />
-                <PercentButton text="50%" onClick={() => onClickPercent(0.5)} />
-                <PercentButton
-                  text="75%"
-                  onClick={() => onClickPercent(0.75)}
-                />
-                <PercentButton text="100%" onClick={() => onClickPercent(1)} />
               </Flex>
               <Flex w="100%" mt="1rem">
                 <Slider
@@ -195,8 +255,8 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
                   as="samp"
                   color={theme.colors.gray_text}
                 >
-                  {poolBalanceToken0
-                    ? formatUnits(poolBalanceToken0, DECIMALS)
+                  {estimateRemovedAmount0
+                    ? formatUnits(estimateRemovedAmount0, DECIMALS)
                     : '--'}
                 </Text>
               </Flex>
@@ -217,8 +277,8 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
                   as="samp"
                   color={theme.colors.gray_text}
                 >
-                  {poolBalanceToken1
-                    ? formatUnits(poolBalanceToken1, DECIMALS)
+                  {estimateRemovedAmount1
+                    ? formatUnits(estimateRemovedAmount1, DECIMALS)
                     : '--'}
                 </Text>
               </Flex>

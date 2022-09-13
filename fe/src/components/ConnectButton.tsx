@@ -6,7 +6,6 @@ import theme from './../theme';
 import { Goerli } from '@usedapp/core';
 import { useContext, useEffect } from 'react';
 import AppContext from './../AppContext';
-import tokens from '../abi/tokens';
 
 type Props = {
   handleOpenModal: any;
