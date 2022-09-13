@@ -18,9 +18,9 @@ import {
   Image,
   Spacer,
 } from '@chakra-ui/react';
-import { useEthers, useTokenBalance } from '@usedapp/core';
+import { Goerli, useEthers, useTokenBalance } from '@usedapp/core';
 import theme from '../../theme';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import tokens from '../../abi/tokens';
 import xlpABI from './../../abi/XLP.json';
 
@@ -60,6 +60,13 @@ const PercentButton = ({ text, onClick }: PercentProps) => {
 };
 
 export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
+  const { account, chainId } = useEthers();
+  const [isConnected, setConnected] = useState<boolean | undefined | ''>(false);
+
+  useEffect(() => {
+    setConnected(account && chainId === Goerli.chainId);
+  }, [account, chainId]);
+
   const token0 = tokens[0];
   const token1 = tokens[1];
   const [percentValue, setPercentValue] = useState<number>(0);
@@ -71,7 +78,7 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
   );
 
   const poolBalanceToken0 = useTokenBalance(token0?.address, tokens[2].address);
-  const poolBalanceToken1 = useTokenBalance(token1?.address, tokens[2].address); 
+  const poolBalanceToken1 = useTokenBalance(token1?.address, tokens[2].address);
 
   const onClickPercent = (percent: number) => {
     setPercentValue(percent * 100);
@@ -88,10 +95,7 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
       const signer = provider.getSigner();
       let xlpContract = new ethers.Contract(tokens[2].address, xlpABI, signer);
       if (liquidityPoolAmount) {
-        console.log('L: ', formatUnits(liquidityPoolAmount || '0', DECIMALS));
-
         const removeLiquidity = liquidityPoolAmount.mul(percentValue).div(100);
-        console.log('R: ', formatUnits(removeLiquidity, DECIMALS));
         const tx = await xlpContract.removeLiquidity(
           BigNumber.from('0'),
           BigNumber.from('0'),
@@ -222,17 +226,28 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
             <Box mt="1.5rem">
               <Button
                 size="lg"
-                color="white"
-                bg={theme.colors.pink_dark}
+                color={isConnected ? 'white' : 'blackAlpha.900'}
+                bg={
+                  isConnected ? theme.colors.pink_dark : theme.colors.gray_light
+                }
                 width="100%"
                 p="1.62rem"
                 borderRadius="1.25rem"
-                _hover={{ bg: theme.colors.pink_dark_hover }}
+                _hover={{
+                  bg: isConnected
+                    ? theme.colors.pink_dark_hover
+                    : theme.colors.gray_dark,
+                }}
                 isLoading={loading}
                 loadingText="Removing"
                 onClick={onRemoveLiquidity}
+                isDisabled={!isConnected}
               >
-                Remove
+                {isConnected
+                  ? 'Remove'
+                  : account
+                  ? 'Please switch network'
+                  : 'Please connect wallet'}
               </Button>
             </Box>
           </Box>

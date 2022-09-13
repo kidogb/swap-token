@@ -17,10 +17,15 @@ import {
   Spacer,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon, CopyIcon, ArrowDownIcon } from '@chakra-ui/icons';
-import { useEthers, useTokenAllowance, useTokenBalance } from '@usedapp/core';
+import {
+  Goerli,
+  useEthers,
+  useTokenAllowance,
+  useTokenBalance,
+} from '@usedapp/core';
 import theme from '../../theme';
 import TokenSelect from '../TokenSelect';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import tokens, { Token } from '../../abi/tokens';
 import xlpABI from './../../abi/XLP.json';
 import tokenABI from './../../abi/Token.json';
@@ -36,7 +41,13 @@ type Props = {
 declare let window: any;
 
 export default function AddLiquidityModal({ isOpen, onClose }: Props) {
-  const { account } = useEthers();
+  const { account, chainId } = useEthers();
+  const [isConnected, setConnected] = useState<boolean | undefined | ''>(false);
+
+  useEffect(() => {
+    setConnected(account && chainId === Goerli.chainId);
+  }, [account, chainId]);
+
   const token0 = tokens[0];
   const token1 = tokens[1];
   const [amountToken0, setAmountToken0] = useState<string | undefined>('');
@@ -363,17 +374,28 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
             <Box mt="1.5rem">
               <Button
                 size="lg"
-                color="white"
-                bg={theme.colors.pink_dark}
+                color={isConnected ? 'white' : 'blackAlpha.900'}
+                bg={
+                  isConnected ? theme.colors.pink_dark : theme.colors.gray_light
+                }
                 width="100%"
                 p="1.62rem"
                 borderRadius="1.25rem"
-                _hover={{ bg: theme.colors.pink_dark_hover }}
+                _hover={{
+                  bg: isConnected
+                    ? theme.colors.pink_dark_hover
+                    : theme.colors.gray_dark,
+                }}
                 isLoading={loading}
                 loadingText="Adding"
                 onClick={onAddLiquidity}
+                isDisabled={!isConnected}
               >
-                Add
+                {isConnected
+                  ? 'Remove'
+                  : account
+                  ? 'Please switch network'
+                  : 'Please connect wallet'}
               </Button>
             </Box>
           </Box>

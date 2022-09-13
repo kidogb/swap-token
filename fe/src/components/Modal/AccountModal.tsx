@@ -11,10 +11,10 @@ import {
   ModalBody,
   ModalCloseButton,
   Text,
-} from "@chakra-ui/react";
-import { ExternalLinkIcon, CopyIcon } from "@chakra-ui/icons";
-import { useEthers } from "@usedapp/core";
-import Identicon from "../Identicon";
+} from '@chakra-ui/react';
+import { ExternalLinkIcon, CopyIcon } from '@chakra-ui/icons';
+import { shortenIfAddress, useEthers } from '@usedapp/core';
+import Identicon from '../Identicon';
 
 type Props = {
   isOpen: any;
@@ -46,7 +46,7 @@ export default function AccountModal({ isOpen, onClose }: Props) {
           color="black"
           fontSize="sm"
           _hover={{
-            color: "gray.600",
+            color: 'gray.600',
           }}
         />
         <ModalBody pt={0} px={4}>
@@ -75,11 +75,12 @@ export default function AccountModal({ isOpen, onClose }: Props) {
                 px={2}
                 h="1.62rem"
                 _hover={{
-                  background: "none",
-                  borderColor: "rgb(213, 0, 102)",
-                  textDecoration: "underline",
+                  background: 'none',
+                  borderColor: 'rgb(213, 0, 102)',
+                  textDecoration: 'underline',
                 }}
-                onClick={handleDeactivateAccount}>
+                onClick={handleDeactivateAccount}
+              >
                 Disconnect
               </Button>
             </Flex>
@@ -90,12 +91,9 @@ export default function AccountModal({ isOpen, onClose }: Props) {
                 fontSize="xl"
                 fontWeight="semibold"
                 ml="2"
-                lineHeight="1.1">
-                {account &&
-                  `${account.slice(0, 6)}...${account.slice(
-                    account.length - 4,
-                    account.length
-                  )}`}
+                lineHeight="1.1"
+              >
+                {shortenIfAddress(account)}
               </Text>
             </Flex>
             <Flex alignContent="center" m={3}>
@@ -105,9 +103,13 @@ export default function AccountModal({ isOpen, onClose }: Props) {
                 fontWeight="normal"
                 fontSize="0.825rem"
                 _hover={{
-                  textDecoration: "none",
-                  color: "rgb(110, 114, 125)",
-                }}>
+                  textDecoration: 'none',
+                  color: 'rgb(110, 114, 125)',
+                }}
+                onClick={() => {
+                  account && navigator.clipboard.writeText(account);
+                }}
+              >
                 <CopyIcon mr={1} />
                 Copy Address
               </Button>
@@ -115,14 +117,15 @@ export default function AccountModal({ isOpen, onClose }: Props) {
                 fontSize="0.825rem;"
                 d="flex"
                 alignItems="center"
-                href={`https://ropsten.etherscan.io/address/${account}`}
+                href={`https://goerli.etherscan.io/address/${account}`}
                 isExternal
                 color="rgb(110, 114, 125)"
                 ml={6}
                 _hover={{
-                  color: "rgb(110, 114, 125)",
-                  textDecoration: "underline",
-                }}>
+                  color: 'rgb(110, 114, 125)',
+                  textDecoration: 'underline',
+                }}
+              >
                 <ExternalLinkIcon mr={1} />
                 View on Explorer
               </Link>
@@ -137,11 +140,7 @@ export default function AccountModal({ isOpen, onClose }: Props) {
           borderBottomRightRadius="3xl"
           p={6}
         >
-          <Text
-            color="black"
-            fontWeight="medium"
-            fontSize="md"
-          >
+          <Text color="black" fontWeight="medium" fontSize="md">
             Your transactions willl appear here...
           </Text>
         </ModalFooter>

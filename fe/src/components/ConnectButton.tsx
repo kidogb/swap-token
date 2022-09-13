@@ -1,4 +1,4 @@
-import { Button, Box, Text, Flex } from '@chakra-ui/react';
+import { Button, Box, Text, Flex, Image } from '@chakra-ui/react';
 import { useEthers, useEtherBalance } from '@usedapp/core';
 import { formatEther } from '@ethersproject/units';
 import Identicon from './Identicon';
@@ -6,6 +6,7 @@ import theme from './../theme';
 import { Goerli } from '@usedapp/core';
 import { useContext, useEffect } from 'react';
 import AppContext from './../AppContext';
+import tokens from '../abi/tokens';
 
 type Props = {
   handleOpenModal: any;
@@ -30,10 +31,21 @@ export default function ConnectButton({ handleOpenModal }: Props) {
 
   return account ? (
     <Flex alignItems="center" bg="rgb(247, 248, 250)" borderRadius="xl" py="0">
-      <Box>{`${chainId} - ${Goerli.chainId}`}</Box>
+      <Box>
+        <Image
+          boxSize="1.5rem"
+          src="https://static.coinstats.app/coins/1650455629727.png"
+          alt="Logo"
+        />
+      </Box>
+      <Box px="0.5rem">
+        <Text as="b">
+          {chainId === Goerli.chainId && `${Goerli.chainName}`}
+        </Text>
+      </Box>
       <Box px="0.5rem">
         <Text color="black" fontSize="md">
-          {etherBalance && parseFloat(formatEther(etherBalance)).toFixed(0)} ETH
+          {etherBalance && parseFloat(formatEther(etherBalance)).toFixed(2)} ETH
         </Text>
       </Box>
       <Button

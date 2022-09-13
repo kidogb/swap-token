@@ -1,7 +1,7 @@
 import { Button, Box } from '@chakra-ui/react';
 import theme from './../theme';
 
-import { useEthers } from '@usedapp/core';
+import { Goerli, useEthers } from '@usedapp/core';
 
 interface Props {
   onSwap: () => void;
@@ -31,7 +31,7 @@ export function AlertButton({ text }: AlertButtonProps) {
 }
 
 export default function SwapButton({ onSwap, loadingSwap }: Props) {
-  const { activateBrowserWallet, account } = useEthers();
+  const { activateBrowserWallet, account, chainId } = useEthers();
 
   async function handleConnectWallet() {
     try {
@@ -41,40 +41,38 @@ export default function SwapButton({ onSwap, loadingSwap }: Props) {
     }
   }
 
-  return account ? (
-    true ? ( // set as true for future feature, can select token
-      <Box mt="0.5rem">
-        <Button
-          size="lg"
-          color="white"
-          bg={theme.colors.pink_dark}
-          width="100%"
-          p="1.62rem"
-          borderRadius="1.25rem"
-          _hover={{ bg: theme.colors.pink_dark_hover }}
-          isLoading={loadingSwap}
-          loadingText="Swapping"
-          onClick={onSwap}
-        >
-          Swap
-        </Button>
-      </Box>
-    ) : (
-      <Box mt="0.5rem">
-        <Button
-          size="lg"
-          variant="ghost"
-          color={theme.colors.gray_dark}
-          bg={theme.colors.gray_light}
-          width="100%"
-          p="1.62rem"
-          borderRadius="1.25rem"
-          _hover={{ bg: theme.colors.gray_light }}
-        >
-          Select a token
-        </Button>
-      </Box>
-    )
+  return account && chainId === Goerli.chainId ? (
+    <Box mt="0.5rem">
+      <Button
+        size="lg"
+        color="white"
+        bg={theme.colors.pink_dark}
+        width="100%"
+        p="1.62rem"
+        borderRadius="1.25rem"
+        _hover={{ bg: theme.colors.pink_dark_hover }}
+        isLoading={loadingSwap}
+        loadingText="Swapping"
+        onClick={onSwap}
+      >
+        Swap
+      </Button>
+    </Box>
+  ) : account ? (
+    <Button
+      size="lg"
+      color={'blackAlpha.900'}
+      bg={theme.colors.gray_light}
+      width="100%"
+      p="1.62rem"
+      borderRadius="1.25rem"
+      _hover={{
+        bg: theme.colors.gray_dark,
+      }}
+      isDisabled
+    >
+      Please switch network
+    </Button>
   ) : (
     <Box mt="0.5rem">
       <Button
