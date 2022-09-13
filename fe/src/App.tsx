@@ -8,6 +8,8 @@ import {
   TabPanel,
   Image,
   Center,
+  Flex,
+  Link,
 } from '@chakra-ui/react';
 import theme from './theme';
 import Header from './components/Header';
@@ -19,36 +21,29 @@ import '@fontsource/inter';
 import './global.css';
 import logo from './assets/uniswap_logo.svg';
 import { AppProvider } from './AppContext';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import UniMenu from './components/UniMenu';
 
 function App() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-
   return (
     <ChakraProvider theme={theme}>
       <AppProvider>
         <Header>
           <Image boxSize="5rem" src={logo} alt="Uniswap Logo" />
           <ConnectButton handleOpenModal={onOpen} />
+
           <AccountModal isOpen={isOpen} onClose={onClose} />
         </Header>
-
-        <Center>
-          <Tabs align="center" variant="soft-rounded" size="md">
-            <TabList>
-              <Tab>Swap</Tab>
-              <Tab>Pool</Tab>
-            </TabList>
-
-            <TabPanels>
-              <TabPanel>
-                <Swap />
-              </TabPanel>
-              <TabPanel>
-                <Pool />
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </Center>
+        <UniMenu />
+        <Flex>
+          <Router>
+            <Routes>
+              <Route path="/swap" element={<Swap />}></Route>
+              <Route path="/pool" element={<Pool />}></Route>
+            </Routes>
+          </Router>
+        </Flex>
       </AppProvider>
     </ChakraProvider>
   );
