@@ -29,6 +29,7 @@ import { BigNumber, ethers } from 'ethers';
 import { useTotalSupply } from '../../hooks/useTotalSupply';
 import { formatUnits } from 'ethers/lib/utils';
 import { DECIMALS } from '../../constant';
+import { getErrorMessage, notify } from '../../utils/notify';
 
 type Props = {
   isOpen: any;
@@ -167,32 +168,15 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
           removeLiquidity
         );
         // notify transaction submited
-        toast({
-          title: '',
-          description: 'Transaction is submited',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
+        notify(toast, 'Transaction is submited', 'success');
         await tx.wait();
         // notify remove success
-        toast({
-          title: '',
-          description: 'Remove Liquidity sucessfully',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
+        notify(toast, 'Remove Liquidity sucessfully', 'success');
       }
     } catch (err) {
       console.log(err);
-      toast({
-        title: '',
-        description: `Remove Liquidity fail`,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      const description = getErrorMessage(err);
+      notify(toast, description, 'error');
     } finally {
       setLoading(false);
     }
