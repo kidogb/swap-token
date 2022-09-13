@@ -5,18 +5,16 @@ import "./ERC20.sol";
 import "./IERC20.sol";
 
 contract XLP is ERC20 {
-    ERC20 private tokenA;
-    ERC20 private tokenB;
+    IERC20 private tokenA;
+    IERC20 private tokenB;
     uint256 private k;
-    uint256 private _initialMint;
 
     uint256 private constant DEFAULT_MINT_AMOUNT = 10**8;
     uint256 private constant PRECISION = 1e12;
 
-    constructor(ERC20 _A, ERC20 _B) ERC20("XLP", "XLP") {
-        tokenA = _A;
-        tokenB = _B;
-        _initialMint = DEFAULT_MINT_AMOUNT * 10**decimals();
+    constructor(address _A, address _B) ERC20("XLP", "XLP") {
+        tokenA = IERC20(_A);
+        tokenB = IERC20(_B);
     }
 
     function addLiquidity(
@@ -24,14 +22,16 @@ contract XLP is ERC20 {
         uint256 amountBDesired,
         uint256 minAmountA,
         uint256 minAmountB
-    ) public returns (uint256 amountA, uint256 amountB) {
+    ) public {
+        // case init pool
+        uint256 amountA = amountADesired;
+        uint256 amountB = amountBDesired;
+
         uint256 _totalSupply = totalSupply();
-        uint256 liquidity = _initialMint;
+        uint256 liquidity = DEFAULT_MINT_AMOUNT * 10**decimals();
         uint256 balanceOfA = tokenA.balanceOf(address(this));
         uint256 balanceOfB = tokenB.balanceOf(address(this));
-        if (balanceOfA == 0 && balanceOfB == 0) {
-            (amountA, amountB) = (amountADesired, amountBDesired);
-        } else {
+        if (balanceOfA != 0 && balanceOfB != 0) {
             uint256 amountBOptimal = (amountADesired * balanceOfB) / balanceOfA;
             if (amountBOptimal <= amountBDesired) {
                 require(
@@ -56,7 +56,7 @@ contract XLP is ERC20 {
         tokenB.transferFrom(msg.sender, address(this), amountB);
         // mint XLP
         _mint(msg.sender, liquidity);
-        emit AddLiquidity(msg.sender, amountA, amountB, liquidity);
+        emit AddLiquidity(msg.sender, liquidity, amountA, amountB);
     }
 
     function removeLiquidity(
@@ -68,62 +68,49 @@ contract XLP is ERC20 {
         uint256 balanceOfXLP = balanceOf(msg.sender);
         require(
             amountXLP <= balanceOfXLP,
-            "removeLiquidity: exceed pool amount"
+            "removeLiquidity: insufficient pool amount"
         );
         uint256 balanceOfA = tokenA.balanceOf(address(this));
         uint256 balanceOfB = tokenB.balanceOf(address(this));
-        uint256 allowRemoveAmountA = (balanceOfA * amountXLP) / _totalSupply;
-        uint256 allowRemoveAmountB = (balanceOfB * amountXLP) / _totalSupply;
+        uint256 removeAmountA = (balanceOfA * amountXLP) / _totalSupply;
+        uint256 removeAmountB = (balanceOfB * amountXLP) / _totalSupply;
         require(
-            allowRemoveAmountA >= minAmountA &&
-                allowRemoveAmountB >= minAmountB,
+            removeAmountA >= minAmountA && removeAmountB >= minAmountB,
             "removeLiquidity: insufficient output amount"
         );
-        k =
-            (balanceOfA - allowRemoveAmountA) *
-            (balanceOfB - allowRemoveAmountB);
+        k = (balanceOfA - removeAmountA) * (balanceOfB - removeAmountB);
         // transfer A, B token to sender
-        tokenA.transfer(msg.sender, allowRemoveAmountA);
-        tokenB.transfer(msg.sender, allowRemoveAmountB);
+        tokenA.transfer(msg.sender, removeAmountA);
+        tokenB.transfer(msg.sender, removeAmountB);
         // burn XLP
         _burn(msg.sender, amountXLP);
-        emit RemoveLiquidity(msg.sender, amountXLP);
+        emit RemoveLiquidity(
+            msg.sender,
+            amountXLP,
+            removeAmountA,
+            removeAmountB
+        );
     }
 
     // asume tokenA is dep in pool and will get tokenB.
     // amountIn: amount token user want to swap
-    // minAmountOut: minimum amount swapped token user received
+    // minAmountOut: minimum amount swapped token which user'll receive
     function swap(
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
         uint256 minAmountOut
     ) public {
-        bool addressCondition = (tokenIn == address(tokenA) &&
-            tokenOut == address(tokenB)) ||
-            (tokenIn == address(tokenB) && tokenOut == address(tokenA));
-        require(addressCondition, "swap: not A or B token");
-        uint256 balanceOfIn = IERC20(tokenIn).balanceOf(address(this));
-        uint256 balanceOfOut = IERC20(tokenOut).balanceOf(address(this));
-        uint256 amountOut = k / (balanceOfIn + amountIn); // new amount of tokenOut in pool
-        require(
-            balanceOfOut - amountOut >= minAmountOut,
-            "swap: insufficient output amount"
-        );
+        uint256 amountOut = calculateAmountOut(tokenIn, tokenOut, amountIn); // amount swapped token which user'll received
+        require(amountOut >= minAmountOut, "swap: insufficient output amount");
         // transfer token
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-        IERC20(tokenOut).transfer(msg.sender, balanceOfOut - amountOut);
-        emit Swap(
-            msg.sender,
-            tokenIn,
-            tokenOut,
-            amountIn,
-            balanceOfOut - amountOut
-        );
+        IERC20(tokenOut).transfer(msg.sender, amountOut);
+        emit Swap(msg.sender, tokenIn, tokenOut, amountIn, amountOut);
     }
 
     // calculate amount out when swap
-    function viewAmountOut(
+    function calculateAmountOut(
         address tokenIn,
         address tokenOut,
         uint256 amountIn
@@ -134,21 +121,26 @@ contract XLP is ERC20 {
         require(addressCondition, "view swap: not A or B token");
         uint256 balanceOfIn = IERC20(tokenIn).balanceOf(address(this));
         uint256 balanceOfOut = IERC20(tokenOut).balanceOf(address(this));
-        uint256 amountOut = k / (balanceOfIn + amountIn);
-        return balanceOfOut - amountOut;
+        uint256 newBalanceOfOut = k / (balanceOfIn + amountIn); // new amount of OutToken in pool after swap
+        return balanceOfOut - newBalanceOfOut;
     }
 
     event AddLiquidity(
         address indexed from,
+        uint256 liquidity,
         uint256 amountA,
-        uint256 amountB,
-        uint256 liquidity
+        uint256 amountB
     );
-    event RemoveLiquidity(address indexed from, uint256 liquidity);
+    event RemoveLiquidity(
+        address indexed from,
+        uint256 liquidity,
+        uint256 amountA,
+        uint256 amountB
+    );
     event Swap(
         address indexed from,
-        address tokenA,
-        address tokenB,
+        address tokenIn,
+        address tokenOut,
         uint256 amountIn,
         uint256 amountOut
     );
