@@ -17,6 +17,7 @@ import {
   SliderThumb,
   Image,
   Spacer,
+  useToast,
 } from '@chakra-ui/react';
 import { Goerli, useEthers, useTokenBalance } from '@usedapp/core';
 import theme from '../../theme';
@@ -60,6 +61,7 @@ const PercentButton = ({ text, onClick }: PercentProps) => {
 };
 
 export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
+  const toast = useToast();
   const { account, chainId } = useEthers();
   const [isConnected, setConnected] = useState<boolean | undefined | ''>(false);
 
@@ -164,10 +166,33 @@ export default function RemoveLiquidityModal({ isOpen, onClose }: Props) {
           BigNumber.from('0'),
           removeLiquidity
         );
+        // notify transaction submited
+        toast({
+          title: '',
+          description: 'Transaction is submited',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
         await tx.wait();
+        // notify remove success
+        toast({
+          title: '',
+          description: 'Remove Liquidity sucessfully',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
       }
     } catch (err) {
       console.log(err);
+      toast({
+        title: '',
+        description: `Remove Liquidity fail`,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }

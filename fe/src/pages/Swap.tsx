@@ -8,12 +8,14 @@ import {
   VStack,
   HStack,
   Spacer,
+  useToast,
+  position,
 } from '@chakra-ui/react';
 
 import { SettingsIcon, ArrowDownIcon } from '@chakra-ui/icons';
 import SwapButton, { AlertButton } from './../components/SwapButton';
 import TokenSelect from './../components/TokenSelect';
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import theme from '../theme';
 import tokens, { Token } from './../abi/tokens';
 import { useEthers, useTokenBalance } from '@usedapp/core';
@@ -23,10 +25,11 @@ import { BigNumber, ethers } from 'ethers';
 import xlpABI from '../abi/XLP.json';
 import { useSwapAmountOut } from '../hooks/useSwapAmountOut';
 import SwapDetail from '../components/SwapDetail';
+import { getErrorMessage, notify } from '../utils/notify';
 
 declare let window: any;
 export default function Swap() {
-  // const { account } = useContext(AppContext);
+  const toast = useToast();
   const { account } = useEthers();
   const [loading, setLoading] = useState<boolean>(false);
   const [inToken, setInToken] = useState<Token | undefined>(tokens[0]);
@@ -75,10 +78,16 @@ export default function Swap() {
           parseUnits(swapAmountIn, DECIMALS),
           BigNumber.from('0')
         );
+        // notify transaction submit
+        notify(toast, 'Transaction is submited', 'success');
         await tx.wait();
+        // notify swap success
+        notify(toast, 'Swap sucessfully', 'success');
       }
     } catch (err) {
       console.log(err);
+      const description = getErrorMessage(err);
+      notify(toast, description, 'error');
     } finally {
       setLoading(false);
     }
@@ -247,7 +256,7 @@ export default function Swap() {
             </Flex>
           </VStack>
         </Flex>
-        <Box mt="-.5rem" color="black">
+        <Box mt="-.5rem" px="1rem" color="black">
           <Text as="em">
             1 {outToken?.name} = {rate ? rate : '--'} {inToken?.name}
           </Text>

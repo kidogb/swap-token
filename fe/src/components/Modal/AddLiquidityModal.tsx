@@ -15,6 +15,7 @@ import {
   HStack,
   Input,
   Spacer,
+  useToast,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon, CopyIcon, ArrowDownIcon } from '@chakra-ui/icons';
 import {
@@ -32,6 +33,7 @@ import tokenABI from './../../abi/Token.json';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { DECIMALS } from '../../constant';
 import { BigNumber, ethers } from 'ethers';
+import { getErrorMessage, notify } from '../../utils/notify';
 
 type Props = {
   isOpen: any;
@@ -41,6 +43,7 @@ type Props = {
 declare let window: any;
 
 export default function AddLiquidityModal({ isOpen, onClose }: Props) {
+  const toast = useToast();
   const { account, chainId } = useEthers();
   const [isConnected, setConnected] = useState<boolean | undefined | ''>(false);
 
@@ -131,9 +134,15 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
         spenderAddress,
         parseUnits(amount, DECIMALS)
       );
+      // notify transaction submited
+      notify(toast, 'Transaction is submited', 'success');
       await tx.wait();
+      // notify approve success
+      notify(toast, 'Approve sucessfully', 'success');
     } catch (err) {
       console.log(err);
+      const description = getErrorMessage(err);
+      notify(toast, description, 'error');
     } finally {
       tokenAddress === token0.address
         ? setLoadingApprove0(false)
@@ -154,10 +163,16 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
           BigNumber.from('0'),
           BigNumber.from('0')
         );
+        // notify transaction submited
+        notify(toast, 'Transaction is submited', 'success');
         await tx.wait();
+        // notify approve success
+        notify(toast, 'Add Liquidity sucessfully', 'success');
       }
     } catch (err) {
       console.log(err);
+      const description = getErrorMessage(err);
+      notify(toast, description, 'error');
     } finally {
       setLoading(false);
     }
@@ -392,7 +407,7 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
                 isDisabled={!isConnected}
               >
                 {isConnected
-                  ? 'Remove'
+                  ? 'Add'
                   : account
                   ? 'Please switch network'
                   : 'Please connect wallet'}
