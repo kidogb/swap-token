@@ -63,12 +63,12 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
   const poolBalanceToken0 = useTokenBalance(token0?.address, tokens[2].address);
   const poolBalanceToken1 = useTokenBalance(token1?.address, tokens[2].address);
 
-  const allowanceA = useTokenAllowance(
+  const allowance0 = useTokenAllowance(
     token0.address,
     account,
     tokens[2].address
   );
-  const allowanceB = useTokenAllowance(
+  const allowance1 = useTokenAllowance(
     token1.address,
     account,
     tokens[2].address
@@ -223,9 +223,9 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
                       button="button0"
                     />
                   </Box>
-                  {allowanceA &&
+                  {allowance0 &&
                     amountToken0 &&
-                    allowanceA.lt(parseUnits(amountToken0, DECIMALS)) && (
+                    allowance0.lt(parseUnits(amountToken0, DECIMALS)) && (
                       <Box>
                         <Button
                           isLoading={loadingApprove0}
@@ -309,9 +309,9 @@ export default function AddLiquidityModal({ isOpen, onClose }: Props) {
                       button="button1"
                     />
                   </Box>
-                  {allowanceB &&
+                  {allowance1 &&
                     amountToken1 &&
-                    allowanceB.lt(parseUnits(amountToken1, DECIMALS)) && (
+                    allowance1.lt(parseUnits(amountToken1, DECIMALS)) && (
                       <Box>
                         <Button
                           isLoading={loadingApprove1}

@@ -7,12 +7,12 @@ export interface Token {
 const tokens = [
   {
     icon: 'https://static.coinstats.app/coins/aaveZSi.png',
-    name: 'A Token',
+    name: 'AToken',
     address: '0x3388965802781fF73De53180A54Ac520ab996B55',
   },
   {
     icon: 'https://static.coinstats.app/coins/1650455588819.png',
-    name: 'B Token',
+    name: 'BToken',
     address: '0x81701263bA017a9D5F180b2e953d924F17640A54',
   },
   {

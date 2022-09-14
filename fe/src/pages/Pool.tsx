@@ -8,9 +8,11 @@ import {
   Badge,
   useDisclosure,
   Spacer,
+  Link,
+  Tooltip,
 } from '@chakra-ui/react';
 
-import { SettingsIcon } from '@chakra-ui/icons';
+import { ExternalLinkIcon, SettingsIcon } from '@chakra-ui/icons';
 import theme from '../theme';
 import tokens from './../abi/tokens';
 import { useTokenBalance } from '@usedapp/core';
@@ -147,7 +149,15 @@ export default function Pool() {
                 mr="0.1rem"
               />
               <Text noOfLines={1} px="1rem" as="samp">
-                {tokens[0].name.toUpperCase()}:{' '}
+                <Tooltip label="Click to mint">
+                  <Link
+                    href={`https://goerli.etherscan.io/address/${tokens[0].address}#writeContract#F4`}
+                    isExternal
+                  >
+                    {tokens[0].name.toUpperCase()}
+                  </Link>
+                </Tooltip>
+                {': '}
                 {balanceAToken
                   ? Math.round(
                       parseFloat(formatUnits(balanceAToken, DECIMALS)) * 1e16
@@ -164,14 +174,25 @@ export default function Pool() {
                 alt="Logo"
                 mr="0.1rem"
               />
+
               <Text noOfLines={1} px="1rem" as="samp">
-                {tokens[1].name.toUpperCase()}:{' '}
+                <Tooltip label="Click to mint">
+                  <Link
+                    href={`https://goerli.etherscan.io/address/${tokens[1].address}#writeContract#F4`}
+                    isExternal
+                  >
+                    {tokens[1].name.toUpperCase()}
+                  </Link>
+                </Tooltip>
+
+                {': '}
                 {balanceBToken
                   ? Math.round(
                       parseFloat(formatUnits(balanceBToken, DECIMALS)) * 1e16
                     ) / 1e16
                   : '--'}
               </Text>
+
               <Spacer />
               <Badge variant="outline">{ratioB && ratioB.toFixed(2)} %</Badge>
             </Flex>

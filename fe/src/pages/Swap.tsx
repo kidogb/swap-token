@@ -18,11 +18,12 @@ import TokenSelect from './../components/TokenSelect';
 import React, { useState } from 'react';
 import theme from '../theme';
 import tokens, { Token } from './../abi/tokens';
-import { useEthers, useTokenBalance } from '@usedapp/core';
+import { useEthers, useTokenAllowance, useTokenBalance } from '@usedapp/core';
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { DECIMALS, SLIPPAGE } from '../constant';
 import { BigNumber, ethers } from 'ethers';
 import xlpABI from '../abi/XLP.json';
+import tokenABI from '../abi/Token.json';
 import { useSwapAmountOut } from '../hooks/useSwapAmountOut';
 import SwapDetail from '../components/SwapDetail';
 import { getErrorMessage, notify } from '../utils/notify';
@@ -32,11 +33,24 @@ export default function Swap() {
   const toast = useToast();
   const { account } = useEthers();
   const [loading, setLoading] = useState<boolean>(false);
-  const [inToken, setInToken] = useState<Token | undefined>(tokens[0]);
-  const [outToken, setOutToken] = useState<Token | undefined>(tokens[1]);
+  const [loadingApproveInToken, setLoadingApproveInToken] = useState(false);
+  const [loadingApproveOutToken, setLoadingApproveOutToken] = useState(false);
+  const [inToken, setInToken] = useState<Token>(tokens[0]);
+  const [outToken, setOutToken] = useState<Token>(tokens[1]);
   const [swapAmountIn, setSwapAmountIn] = useState<string | undefined>('');
   const balanceInputToken = useTokenBalance(inToken?.address, account);
   const balanceOutputToken = useTokenBalance(outToken?.address, account);
+  const allowanceInToken = useTokenAllowance(
+    inToken.address,
+    account,
+    tokens[2].address
+  );
+  const allowanceOutToken = useTokenAllowance(
+    outToken.address,
+    account,
+    tokens[2].address
+  );
+
   const swapAmountOut = useSwapAmountOut(
     tokens[2].address,
     new ethers.utils.Interface(xlpABI),
@@ -62,6 +76,38 @@ export default function Swap() {
   const onClickMaxButton = () => {
     balanceInputToken &&
       setSwapAmountIn(formatUnits(balanceInputToken, DECIMALS));
+  };
+
+  const onApprove = async (
+    tokenAddress: string,
+    spenderAddress: string,
+    amount: string
+  ) => {
+    try {
+      tokenAddress === inToken.address
+        ? setLoadingApproveInToken(true)
+        : setLoadingApproveOutToken(true);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      let tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
+      const tx = await tokenContract.approve(
+        spenderAddress,
+        parseUnits(amount, DECIMALS)
+      );
+      // notify transaction submited
+      notify(toast, 'Transaction is submited', 'success');
+      await tx.wait();
+      // notify approve success
+      notify(toast, 'Approve sucessfully', 'success');
+    } catch (err) {
+      console.log(err);
+      const description = getErrorMessage(err);
+      notify(toast, description, 'error');
+    } finally {
+      tokenAddress === inToken.address
+        ? setLoadingApproveInToken(false)
+        : setLoadingApproveOutToken(false);
+    }
   };
 
   const onSwapToken = async () => {
@@ -138,6 +184,28 @@ export default function Swap() {
                   button="button0"
                 />
               </Box>
+              {allowanceInToken &&
+                swapAmountIn &&
+                allowanceInToken.lt(parseUnits(swapAmountIn, DECIMALS)) && (
+                  <Box>
+                    <Button
+                      isLoading={loadingApproveInToken}
+                      loadingText="Aprroving"
+                      colorScheme="pink"
+                      variant="link"
+                      size="xs"
+                      onClick={() =>
+                        onApprove(
+                          inToken.address,
+                          tokens[2].address,
+                          swapAmountIn
+                        )
+                      }
+                    >
+                      Approve
+                    </Button>
+                  </Box>
+                )}
               <Box>
                 <Input
                   placeholder="0.0"
@@ -224,6 +292,28 @@ export default function Swap() {
                   button="button1"
                 />
               </Box>
+              {/* {allowanceOutToken &&
+                swapAmountOut &&
+                allowanceOutToken.lt(swapAmountOut) && (
+                  <Box>
+                    <Button
+                      isLoading={loadingApproveOutToken}
+                      loadingText="Aprroving"
+                      colorScheme="pink"
+                      variant="link"
+                      size="xs"
+                      onClick={() =>
+                        onApprove(
+                          outToken.address,
+                          tokens[2].address,
+                          formatUnits(swapAmountOut, DECIMALS)
+                        )
+                      }
+                    >
+                      Approve
+                    </Button>
+                  </Box>
+                )} */}
               <Box>
                 <Input
                   readOnly
