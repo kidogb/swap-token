@@ -18,7 +18,7 @@ const tokens = [
   {
     icon: 'https://static.coinstats.app/coins/basic-attention-tokenbhU.png',
     name: 'XLP',
-    address: '0x1A5797a73C23AFd1eFc816f4340147C7312d423C',
+    address: '0x9443eCE2167d1C40725ecc40e11A4CD5FdbDD7be',
   },
 ];
 
