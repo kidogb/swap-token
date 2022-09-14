@@ -46,7 +46,7 @@ contract XLP is ERC20 {
                     amountAOptimal >= minAmountA,
                     "addLiquidity: insufficient amount"
                 );
-                (amountA, amountB) = (amountBOptimal, amountBDesired);
+                (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
             liquidity = (_totalSupply * amountA) / balanceOfA;
         }
