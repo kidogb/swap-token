@@ -5,8 +5,8 @@ import "./ERC20.sol";
 import "./IERC20.sol";
 
 contract XLP is ERC20 {
-    IERC20 private tokenA;
-    IERC20 private tokenB;
+    IERC20 public tokenA;
+    IERC20 public tokenB;
     uint256 private k;
 
     uint256 private constant DEFAULT_MINT_AMOUNT = 10**8;
@@ -51,24 +51,23 @@ contract XLP is ERC20 {
             liquidity = (_totalSupply * amountA) / balanceOfA;
         }
         k = (balanceOfA + amountA) * (amountB + balanceOfB);
+        // mint XLP
+        _mint(msg.sender, liquidity);
         // transfer token to pool
         tokenA.transferFrom(msg.sender, address(this), amountA);
         tokenB.transferFrom(msg.sender, address(this), amountB);
-        // mint XLP
-        _mint(msg.sender, liquidity);
         emit AddLiquidity(msg.sender, liquidity, amountA, amountB);
     }
 
     function removeLiquidity(
+        uint256 amountXLP,
         uint256 minAmountA,
-        uint256 minAmountB,
-        uint256 amountXLP
+        uint256 minAmountB
     ) public {
         uint256 _totalSupply = totalSupply();
-        uint256 balanceOfXLP = balanceOf(msg.sender);
         require(
-            amountXLP <= balanceOfXLP,
-            "removeLiquidity: insufficient pool amount"
+            amountXLP <= balanceOf(msg.sender),
+            "removeLiquidity: insufficient balance"
         );
         uint256 balanceOfA = tokenA.balanceOf(address(this));
         uint256 balanceOfB = tokenB.balanceOf(address(this));
@@ -79,11 +78,11 @@ contract XLP is ERC20 {
             "removeLiquidity: insufficient output amount"
         );
         k = (balanceOfA - removeAmountA) * (balanceOfB - removeAmountB);
+        // burn XLP
+        _burn(msg.sender, amountXLP);
         // transfer A, B token to sender
         tokenA.transfer(msg.sender, removeAmountA);
         tokenB.transfer(msg.sender, removeAmountB);
-        // burn XLP
-        _burn(msg.sender, amountXLP);
         emit RemoveLiquidity(
             msg.sender,
             amountXLP,
@@ -115,10 +114,11 @@ contract XLP is ERC20 {
         address tokenOut,
         uint256 amountIn
     ) public view returns (uint256) {
-        bool addressCondition = (tokenIn == address(tokenA) &&
-            tokenOut == address(tokenB)) ||
-            (tokenIn == address(tokenB) && tokenOut == address(tokenA));
-        require(addressCondition, "view swap: not A or B token");
+        require(
+            (tokenIn == address(tokenA) && tokenOut == address(tokenB)) ||
+                (tokenIn == address(tokenB) && tokenOut == address(tokenA)),
+            "calculateAmountOut: invalid token"
+        );
         uint256 balanceOfIn = IERC20(tokenIn).balanceOf(address(this));
         uint256 balanceOfOut = IERC20(tokenOut).balanceOf(address(this));
         uint256 newBalanceOfOut = k / (balanceOfIn + amountIn); // new amount of OutToken in pool after swap
