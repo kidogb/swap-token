@@ -45,17 +45,16 @@ describe("XLP contract test", () => {
     await BContract.deployed();
     const xlp = await ethers.getContractFactory("XLP");
     xlpContract = await xlp.deploy(AContract.address, BContract.address);
+    await initPool("10000", "100");
   });
 
   it("Init pool with A, B token", async () => {
-    await initPool("1000", "10");
     // expect XLP token is minted
     const xlpTotalSupply = await xlpContract.totalSupply();
     expect(xlpTotalSupply).to.eq(parseEther(DEFAULT_MINT_AMOUNT + ""));
   });
 
   it("Increase liquidity pool with A, B token", async () => {
-    await initPool("1000", "10");
     // increase liquidity
     const increaseAmountA = "500";
     const increaseAmountB = "5";
@@ -83,12 +82,11 @@ describe("XLP contract test", () => {
     const xlpTotalSupply = await xlpContract.totalSupply();
     // expected XLP totalSupply is increased
     expect(xlpTotalSupply).eq(
-      parseEther(DEFAULT_MINT_AMOUNT + (DEFAULT_MINT_AMOUNT * 500) / 1000 + "")
+      parseEther(DEFAULT_MINT_AMOUNT + (DEFAULT_MINT_AMOUNT * 500) / 10000 + "")
     );
   });
 
   it("Remove liquidity pool with A, B token", async () => {
-    await initPool("1000", "10");
     const xlpTotalSupplyBefore = await xlpContract.totalSupply();
     // remove liquidity
     const removeXLP = "1000000";
@@ -97,9 +95,9 @@ describe("XLP contract test", () => {
     await xlpContract
       .connect(owner)
       .removeLiquidity(
+        parseEther(removeXLP),
         parseEther(minAmountA),
-        parseEther(minAmountB),
-        parseEther(removeXLP)
+        parseEther(minAmountB)
       );
     const xlpTotalSupplyAfter = await xlpContract.totalSupply();
     // expected XLP totalSupply is increased
@@ -109,7 +107,6 @@ describe("XLP contract test", () => {
   });
 
   it("Swap A, B token", async () => {
-    await initPool("10000", "100"); // 100A = 1B => 1A = 0.01B
     const amountIn = "1";
     // (1- slippage) * desiredAmoutOut <= minAmountOut <= desiredAmount
     const minAmountOut = BigNumber.from("1");
