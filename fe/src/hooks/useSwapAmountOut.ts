@@ -23,7 +23,7 @@ export function useSwapAmountOut(
     tokenOutAddress &&
     amountIn && {
       contract: new Contract(poolAddress, abi),
-      method: 'viewAmountOut',
+      method: 'calculateAmountOut',
       args: [tokenInAddress, tokenOutAddress, amountIn],
     };
   const { value, error } = useCall(queryParams) ?? {};
